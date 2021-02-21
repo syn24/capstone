@@ -1,0 +1,110 @@
+---
+title: "Milestone"
+author: "Sandra Müller"
+date: "10 2 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r}
+library(ggplot2, quietly = TRUE, warn.conflicts = FALSE)
+library(stringr, quietly = TRUE, warn.conflicts = FALSE)
+library(quanteda, quietly = TRUE, warn.conflicts = FALSE)
+library(textmineR, quietly = TRUE, warn.conflicts = FALSE)
+```
+    
+## Task
+
+```{r}
+
+twitter <- readLines("final/en_US/en_US.twitter.txt", skipNul = TRUE, warn = FALSE)
+blogs <- readLines("final/en_US/en_US.blogs.txt", skipNul = TRUE, warn = FALSE)
+news <- readLines("final/en_US/en_US.news.txt", skipNul = TRUE, warn = FALSE)
+allfiles <- unlist(list(twitter, blogs, news))
+```
+
+## Basic data for files
+
+```{r}
+print(length(twitter))
+print(length(blogs))
+print(length(news))
+
+
+```
+
+## Basic clean ups
+
+```{r}
+
+allfilesSample <- sample(allfiles, length(allfiles)*0.01)
+
+allfilesSample <- str_replace_all(allfilesSample,"[^a-zA-Z]", " ")
+allfilesSample <- str_replace_all(allfilesSample," s ", "'s ")
+allfilesSample <- str_replace_all(allfilesSample," t ", "'t ")
+allfilesSample <- str_replace_all(allfilesSample," u ", " you ")
+
+```
+
+
+```{r}
+#twitterSample <- sample(twitterWords, length(twitterWords)*0.01)
+#blogsSample <- sample(blogsWords, length(blogsWords)*0.01)
+#newsSample <- sample(newsWords, length(newsWords)*0.01)
+
+```
+
+```{r}
+aFCorpus <- corpus(allfilesSample)
+
+toks <- tokens(allfilesSample, remove_punct = TRUE)
+toks2gram <- tokens_ngrams(toks, n = 2)
+toks3gram <- tokens_ngrams(toks, n = 3)
+
+unigrams <- dfm(toks, remove = stopwords("english"), tolower = TRUE)
+bigrams <- dfm(toks2gram, remove = stopwords("english"), tolower = TRUE)
+trigrams <- dfm(toks3gram, remove = stopwords("english"), tolower = TRUE)
+```
+
+```{r}
+head(unigrams)
+head(bigrams)
+head(trigrams)
+tempFrequencyMatrix <- textstat_frequency(unigrams, n = 20)
+
+g <- ggplot(tempFrequencyMatrix, aes(x = reorder(feature, frequency), y = frequency))
+        g <- g + labs(title = paste(deparse(substitute(n)), "top", 
+                        deparse(substitute(frequencyMatrix)), sep = " "),
+                        x = "N-Gram", y = "Frequency")
+        g + geom_bar(stat="identity", fill="black", colour="black") + coord_flip()  
+        
+tempFrequencyMatrixBigrams <- textstat_frequency(bigrams, n = 20)
+
+g <- ggplot(tempFrequencyMatrixBigrams, aes(x = reorder(feature, frequency), y = frequency))
+        g <- g + labs(title = paste(deparse(substitute(n)), "top", 
+                        deparse(substitute(frequencyMatrix)), sep = " "),
+                        x = "N-Gram", y = "Frequency")
+        g + geom_bar(stat="identity", fill="blue", colour="black") + coord_flip()       
+        
+tempFrequencyMatrixTrigram <- textstat_frequency(trigrams, n = 20)
+
+g <- ggplot(tempFrequencyMatrixTrigram, aes(x = reorder(feature, frequency), y = frequency))
+        g <- g + labs(title = paste(deparse(substitute(n)), "top", 
+                        deparse(substitute(frequencyMatrix)), sep = " "),
+                        x = "N-Gram", y = "Frequency")
+        g + geom_bar(stat="identity", fill="red", colour="red") + coord_flip()           
+```
+
+
+
+## 4. Get feedback on your plans for creating a prediction algorithm and Shiny app. ##
+
+There is some uncertainty in the plans. Mostly, I plan to continue examine n Grams
+of order 1-2-3-4 and predicting the results based on a simple fall-back strategy.
+
+Try to find 4-grams and then move to lower numbers if nothing similar is found.
+
+The most concerning part is smoothing and predicting the unknown words.
+Another concern is a very limited amount of time (must be on the fly) and resources.
